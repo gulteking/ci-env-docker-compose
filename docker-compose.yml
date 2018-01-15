@@ -1,0 +1,50 @@
+version: "3.4"
+services:
+    mysql:
+        image: mysql:latest
+        volumes:
+            - mysql_home:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=somesecret
+            - MYSQL_DATABASE=sonardb
+        networks:
+            - cinet
+    sonarqube:
+        image: sonarqube:lts
+        volumes:
+            - sonarqube_conf:/opt/sonarqube/conf
+            - sonarqube_data:/opt/sonarqube/data
+            - sonarqube_extensions:/opt/sonarqube/extensions
+            - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+        depends_on:
+            - mysql
+        ports:
+            - 9000:9000
+            - 9092:9092
+        environment:
+            - SONARQUBE_JDBC_USERNAME=root
+            - SONARQUBE_JDBC_PASSWORD=somesecret
+            - SONARQUBE_JDBC_URL=jdbc:mysql://mysql:3306/sonardb?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true
+        networks:
+            - cinet
+    jenkins:
+        image: jenkins/jenkins:lts
+        volumes:
+            - jenkins_home:/var/jenkins_home
+        depends_on:
+            - sonarqube
+        ports:
+            - 8080:8080
+            - 50000:50000
+        networks:
+            - cinet
+volumes:
+    mysql_home:
+    sonarqube_conf:
+    sonarqube_data:
+    sonarqube_extensions:
+    sonarqube_bundled-plugins:
+    jenkins_home:
+networks:
+  cinet:
+    driver: bridge
